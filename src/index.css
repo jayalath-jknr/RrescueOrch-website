@@ -1,0 +1,29 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-rescue-dark text-white font-sans antialiased overflow-x-hidden selection:bg-rescue-orange selection:text-white;
+  }
+}
+
+.glass {
+  @apply bg-white/5 backdrop-blur-lg border border-white/10 shadow-2xl rounded-2xl;
+}
+
+.glass-nav {
+  @apply bg-rescue-dark/80 backdrop-blur-xl border-b border-white/5 fixed top-0 w-full z-50 transition-all duration-300;
+}
+
+.gradient-text {
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-rescue-orange via-orange-500 to-amber-400 font-extrabold;
+}
+
+.glow {
+  box-shadow: 0 0 30px rgba(255, 87, 34, 0.3);
+}
+
+.hero-bg {
+  background: radial-gradient(circle at 50% 50%, #2d1b0e 0%, #0f0f0f 100%);
+}
