@@ -7,26 +7,122 @@ import {
     Zap, Users, BrainCircuit, Send, Gamepad2, Video
 } from 'lucide-react';
 
-/* ─── Constants from Webots Simulation ─── */
-const FIRE_POS = { x: 8.5, y: 2.5 };
-const INJURED_POS = { x: 5.0, y: 0.5 };
+/* ═══════════════════════════════════════════════
+   SCENARIO DEFINITIONS
+   ═══════════════════════════════════════════════ */
 
-const ROBOT_META = {
-    mavic:  { label: 'Mavic Drone', icon: '🛸', type: 'Aerial Recon', color: '#3b82f6' },
-    tiago1: { label: 'TIAGo #1',   icon: '🤖', type: 'Ground Unit',  color: '#22c55e' },
-    tiago2: { label: 'TIAGo #2',   icon: '🤖', type: 'Ground Unit',  color: '#10b981' },
-    tiago3: { label: 'TIAGo #3',   icon: '🤖', type: 'Ground Unit',  color: '#06d6a0' },
+const SCENARIOS = {
+    kitchen: {
+        id: 'kitchen',
+        label: 'Scenario 1 — Kitchen Fire',
+        shortLabel: 'Scenario 1',
+        description: 'Kitchen fire rescue',
+        icon: '🍳',
+        mapLabel: 'Kitchen — Live View',
+        firePos: { x: 3.0, y: -2.0 },
+        injuredPos: { x: -4.0, y: 1.0 },
+        robots: {
+            mavic:  { label: 'Mavic Drone', icon: '🛸', type: 'Aerial Recon', color: '#3b82f6' },
+            tiago1: { label: 'TIAGo #1',   icon: '🤖', type: 'Ground Unit',  color: '#22c55e' },
+            tiago2: { label: 'TIAGo #2',   icon: '🤖', type: 'Ground Unit',  color: '#10b981' },
+        },
+        initialRobots: {
+            mavic:  { x: -6, y: -5, task: 'standby', targetX: -6, targetY: -5 },
+            tiago1: { x: -7, y: 2, task: 'standby', targetX: -7, targetY: 2 },
+            tiago2: { x: -7, y: 4, task: 'standby', targetX: -7, targetY: 4 },
+        },
+        script: [
+            { at: 0,  type: 'log', msg: '[SYSTEM] All units online — awaiting deployment' },
+            { at: 0,  type: 'log', msg: '[SYSTEM] Kitchen sensors calibrated ✓' },
+            { at: 0,  type: 'phase', phase: 'IDLE', intensity: 0 },
+            { at: 3,  type: 'phase', phase: 'GAS_LEAK', intensity: 0.05 },
+            { at: 3,  type: 'log', msg: '[SENSOR] ⚠ Gas leak detected near stove — Zone A' },
+            { at: 4,  type: 'log', msg: '[SENSOR] Elevated propane levels — 280 ppm' },
+            { at: 4,  type: 'llm', msg: 'report_status("Gas leak confirmed near stove. Initiating kitchen emergency protocol.")' },
+            { at: 5,  type: 'phase', phase: 'GAS_LEAK', intensity: 0.1 },
+            { at: 6,  type: 'log', msg: '[SYSTEM] Emergency protocol KITCHEN-ALPHA initiated' },
+            { at: 7,  type: 'phase', phase: 'IGNITION', intensity: 0.2 },
+            { at: 7,  type: 'log', msg: '[FIRE] 🔥 Ignition confirmed at stove area (3.0, -2.0)!' },
+            { at: 8,  type: 'llm', msg: 'move_drone(3.0, -3.0, 2.5) — Scout kitchen fire zone' },
+            { at: 8,  type: 'move', robot: 'mavic', target: { x: 3.0, y: -3.0 } },
+            { at: 8,  type: 'task', robot: 'mavic', task: 'scout' },
+            { at: 8,  type: 'log', msg: '[AI] Deploying Mavic for aerial reconnaissance' },
+            { at: 9,  type: 'phase', phase: 'IGNITION', intensity: 0.3 },
+            { at: 10, type: 'phase', phase: 'FIRE_SPREAD', intensity: 0.35 },
+            { at: 10, type: 'log', msg: '[FIRE] Fire spreading to adjacent counters' },
+            { at: 11, type: 'llm', msg: 'move_robot("tiago1", 3.0, -2.0) — Navigate to fire zone' },
+            { at: 11, type: 'llm', msg: 'move_robot("tiago2", -4.0, 1.0) — Navigate to injured person' },
+            { at: 11, type: 'move', robot: 'tiago1', target: { x: 3.0, y: -2.0 } },
+            { at: 11, type: 'move', robot: 'tiago2', target: { x: -4.0, y: 1.0 } },
+            { at: 11, type: 'log', msg: '[AI] Ground units dispatched — 2 robots en route' },
+            { at: 12, type: 'phase', phase: 'FIRE_SPREAD', intensity: 0.45 },
+            { at: 13, type: 'log', msg: '[MAVIC] Aerial scan — fire spreading from stove to counter' },
+            { at: 14, type: 'phase', phase: 'FIRE_SPREAD', intensity: 0.55 },
+            { at: 15, type: 'phase', phase: 'FIRE_SPREAD', intensity: 0.62 },
+            { at: 16, type: 'log', msg: '[TIAGO2] En route to injured person — ETA 5s' },
+            { at: 17, type: 'phase', phase: 'FIRE_SPREAD', intensity: 0.65 },
+            { at: 18, type: 'llm', msg: 'assign_task("tiago1", "extinguish") — Robot in range of fire' },
+            { at: 18, type: 'task', robot: 'tiago1', task: 'extinguish' },
+            { at: 18, type: 'log', msg: '[TIAGO1] 🧯 Reached stove fire — beginning suppression' },
+            { at: 19, type: 'phase', phase: 'FIRE_SPREAD', intensity: 0.55 },
+            { at: 20, type: 'phase', phase: 'FIRE_SPREAD', intensity: 0.45 },
+            { at: 20, type: 'log', msg: '[TIAGO1] Fire intensity decreasing — 45%' },
+            { at: 21, type: 'phase', phase: 'FIRE_SPREAD', intensity: 0.35 },
+            { at: 22, type: 'phase', phase: 'FIRE_SPREAD', intensity: 0.25 },
+            { at: 22, type: 'log', msg: '[TIAGO1] Suppression effective — intensity at 25%' },
+            { at: 23, type: 'phase', phase: 'FIRE_SPREAD', intensity: 0.15 },
+            { at: 24, type: 'phase', phase: 'FIRE_SPREAD', intensity: 0.08 },
+            { at: 24, type: 'llm', msg: 'assign_task("tiago2", "rescue") — Robot reached injured person' },
+            { at: 24, type: 'task', robot: 'tiago2', task: 'rescue' },
+            { at: 24, type: 'log', msg: '[TIAGO2] 🚑 Reached injured person near dining area' },
+            { at: 25, type: 'phase', phase: 'FIRE_SPREAD', intensity: 0.03 },
+            { at: 25, type: 'log', msg: '[TIAGO2] Victim vitals: pulse 80bpm — stable' },
+            { at: 27, type: 'phase', phase: 'EXTINGUISHED', intensity: 0 },
+            { at: 27, type: 'log', msg: '[FIRE] ✅ Kitchen fire fully extinguished' },
+            { at: 27, type: 'task', robot: 'tiago1', task: 'standby' },
+            { at: 28, type: 'rescued' },
+            { at: 28, type: 'log', msg: '[TIAGO2] ✅ Victim rescued and secured' },
+            { at: 28, type: 'task', robot: 'tiago2', task: 'standby' },
+            { at: 29, type: 'llm', msg: 'report_status("Mission complete. Kitchen fire extinguished. Person rescued.")' },
+            { at: 29, type: 'log', msg: '[SYSTEM] 🎉 MISSION COMPLETE — All objectives achieved' },
+            { at: 30, type: 'task', robot: 'mavic', task: 'standby' },
+            { at: 30, type: 'log', msg: '[SYSTEM] All units returning to standby' },
+        ],
+        videos: [
+            { src: '/videos/kitchen.mp4', label: 'Webots kitchen environment' },
+            { src: '/videos/RescueOrch_kitchen.mp4', label: 'RescuOrch kitchen rescue mission' },
+        ],
+    },
+    factory: {
+        id: 'factory',
+        label: 'Scenario 2 — Factory Fire',
+        shortLabel: 'Scenario 2',
+        description: 'Factory fire rescue',
+        icon: '🏭',
+        mapLabel: 'Factory Floor — Live View',
+        firePos: { x: 8.5, y: 2.5 },
+        injuredPos: { x: 5.0, y: 0.5 },
+        robots: {
+            mavic:  { label: 'Mavic Drone', icon: '🛸', type: 'Aerial Recon', color: '#3b82f6' },
+            tiago1: { label: 'TIAGo #1',   icon: '🤖', type: 'Ground Unit',  color: '#22c55e' },
+            tiago2: { label: 'TIAGo #2',   icon: '🤖', type: 'Ground Unit',  color: '#10b981' },
+            tiago3: { label: 'TIAGo #3',   icon: '🤖', type: 'Ground Unit',  color: '#06d6a0' },
+        },
+        initialRobots: {
+            mavic:  { x: 0, y: -6, task: 'standby', targetX: 0, targetY: -6 },
+            tiago1: { x: -5, y: -8, task: 'standby', targetX: -5, targetY: -8 },
+            tiago2: { x: -3, y: -8, task: 'standby', targetX: -3, targetY: -8 },
+            tiago3: { x: -1, y: -8, task: 'standby', targetX: -1, targetY: -8 },
+        },
+        script: null, // will use FACTORY_MISSION_SCRIPT below
+        videos: [
+            { src: '/videos/factory_rescue.mp4', label: 'Webots factory fire rescue scenario' },
+        ],
+    },
 };
 
-const TASK_STYLES = {
-    extinguish: { bg: 'rgba(249,115,22,0.15)', text: '#f97316', border: 'rgba(249,115,22,0.3)' },
-    rescue:     { bg: 'rgba(168,85,247,0.15)', text: '#a855f7', border: 'rgba(168,85,247,0.3)' },
-    scout:      { bg: 'rgba(59,130,246,0.15)',  text: '#3b82f6', border: 'rgba(59,130,246,0.3)' },
-    standby:    { bg: 'rgba(136,153,176,0.1)',  text: '#8899b0', border: 'rgba(136,153,176,0.2)' },
-};
-
-/* ─── Dummy Mission Script ─── */
-const MISSION_SCRIPT = [
+/* ─── Factory Mission Script (Scenario 2) ─── */
+const FACTORY_MISSION_SCRIPT = [
     { at: 0,  type: 'log', msg: '[SYSTEM] All units online — awaiting deployment' },
     { at: 0,  type: 'log', msg: '[SYSTEM] Sensors calibrated ✓' },
     { at: 0,  type: 'phase', phase: 'IDLE', intensity: 0 },
@@ -89,41 +185,58 @@ const MISSION_SCRIPT = [
     { at: 30, type: 'task', robot: 'tiago3', task: 'standby' },
     { at: 30, type: 'log', msg: '[SYSTEM] All units returning to standby' },
 ];
+SCENARIOS.factory.script = FACTORY_MISSION_SCRIPT;
 
-/* ─── Custom Hook: Dummy Mission Engine ─── */
-function useDummyMission() {
+const TASK_STYLES = {
+    extinguish: { bg: 'rgba(249,115,22,0.15)', text: '#f97316', border: 'rgba(249,115,22,0.3)' },
+    rescue:     { bg: 'rgba(168,85,247,0.15)', text: '#a855f7', border: 'rgba(168,85,247,0.3)' },
+    scout:      { bg: 'rgba(59,130,246,0.15)',  text: '#3b82f6', border: 'rgba(59,130,246,0.3)' },
+    standby:    { bg: 'rgba(136,153,176,0.1)',  text: '#8899b0', border: 'rgba(136,153,176,0.2)' },
+};
+
+/* ─── Custom Hook: Scenario-Aware Mission Engine ─── */
+function useDummyMission(scenario) {
+    const config = SCENARIOS[scenario];
     const [running, setRunning] = useState(false);
     const [elapsed, setElapsed] = useState(0);
     const [firePhase, setFirePhase] = useState('IDLE');
     const [fireIntensity, setFireIntensity] = useState(0);
-    const [robots, setRobots] = useState({
-        mavic:  { x: 0, y: -6, task: 'standby', targetX: 0, targetY: -6 },
-        tiago1: { x: -5, y: -8, task: 'standby', targetX: -5, targetY: -8 },
-        tiago2: { x: -3, y: -8, task: 'standby', targetX: -3, targetY: -8 },
-        tiago3: { x: -1, y: -8, task: 'standby', targetX: -1, targetY: -8 },
-    });
+    const [robots, setRobots] = useState({ ...config.initialRobots });
     const [logs, setLogs] = useState([]);
     const [llmDecisions, setLlmDecisions] = useState([]);
     const [personRescued, setPersonRescued] = useState(false);
     const [missionComplete, setMissionComplete] = useState(false);
     const scriptIdxRef = useRef(0);
+    const scriptRef = useRef(config.script);
 
-    const reset = useCallback(() => {
+    // When scenario changes, reset everything
+    useEffect(() => {
+        const cfg = SCENARIOS[scenario];
+        scriptRef.current = cfg.script;
+        setRunning(false);
         setElapsed(0);
         setFirePhase('IDLE');
         setFireIntensity(0);
-        setRobots({
-            mavic:  { x: 0, y: -6, task: 'standby', targetX: 0, targetY: -6 },
-            tiago1: { x: -5, y: -8, task: 'standby', targetX: -5, targetY: -8 },
-            tiago2: { x: -3, y: -8, task: 'standby', targetX: -3, targetY: -8 },
-            tiago3: { x: -1, y: -8, task: 'standby', targetX: -1, targetY: -8 },
-        });
+        setRobots({ ...cfg.initialRobots });
         setLogs([]);
         setLlmDecisions([]);
         setPersonRescued(false);
         setMissionComplete(false);
         scriptIdxRef.current = 0;
-    }, []);
+    }, [scenario]);
+
+    const reset = useCallback(() => {
+        const cfg = SCENARIOS[scenario];
+        setElapsed(0);
+        setFirePhase('IDLE');
+        setFireIntensity(0);
+        setRobots({ ...cfg.initialRobots });
+        setLogs([]);
+        setLlmDecisions([]);
+        setPersonRescued(false);
+        setMissionComplete(false);
+        scriptIdxRef.current = 0;
+    }, [scenario]);
 
     const start = useCallback(() => { reset(); setRunning(true); }, [reset]);
     const stop  = useCallback(() => { setRunning(false); }, []);
@@ -136,9 +249,10 @@ function useDummyMission() {
         const interval = setInterval(() => {
             setElapsed(prev => {
                 const next = prev + TICK / 1000;
+                const currentScript = scriptRef.current;
 
-                while (scriptIdxRef.current < MISSION_SCRIPT.length) {
-                    const evt = MISSION_SCRIPT[scriptIdxRef.current];
+                while (scriptIdxRef.current < currentScript.length) {
+                    const evt = currentScript[scriptIdxRef.current];
                     if (evt.at > next) break;
                     scriptIdxRef.current++;
 
@@ -171,7 +285,7 @@ function useDummyMission() {
                     }
                 }
 
-                if (scriptIdxRef.current >= MISSION_SCRIPT.length && next > 31) {
+                if (scriptIdxRef.current >= currentScript.length && next > 31) {
                     setMissionComplete(true);
                     setRunning(false);
                 }
@@ -217,7 +331,9 @@ function useDummyMission() {
    ═══════════════════════════════════════════════ */
 
 export default function Simulation() {
-    const mission = useDummyMission();
+    const [scenario, setScenario] = useState('kitchen');
+    const config = SCENARIOS[scenario];
+    const mission = useDummyMission(scenario);
     const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
     const [manualRobot, setManualRobot] = useState('tiago1');
     const [manualAction, setManualAction] = useState('Move');
@@ -271,6 +387,25 @@ export default function Simulation() {
                 </div>
             </header>
 
+            {/* ─── Scenario Selector ─── */}
+            <div className="px-4 md:px-6 pt-4 flex items-center gap-3">
+                {Object.values(SCENARIOS).map(sc => (
+                    <button
+                        key={sc.id}
+                        onClick={() => setScenario(sc.id)}
+                        className={`px-5 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 transition-all border ${
+                            scenario === sc.id
+                                ? 'bg-rescue-orange/10 text-rescue-orange border-rescue-orange/30 shadow-lg shadow-rescue-orange/10'
+                                : 'bg-white/[0.03] text-gray-400 border-white/[0.06] hover:bg-white/[0.06] hover:text-white'
+                        }`}
+                    >
+                        <span>{sc.icon}</span> {sc.shortLabel}
+                    </button>
+                ))}
+                <div className="flex-1" />
+                <span className="text-xs text-gray-500 font-mono">{config.description}</span>
+            </div>
+
             {/* ─── Status Cards Row ─── */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 px-4 md:px-6 py-4">
                 <StatusCard
@@ -306,20 +441,32 @@ export default function Simulation() {
                 {/* Factory Floor Live View */}
                 <div className="cc-panel relative min-h-[500px]">
                     <div className="absolute top-4 left-4 z-10 flex items-center gap-2">
-                        <span className="text-base">🏭</span>
-                        <span className="text-xs font-bold tracking-wide text-gray-300">Factory Floor — Live View</span>
+                        <span className="text-base">{config.icon}</span>
+                        <span className="text-xs font-bold tracking-wide text-gray-300">{config.mapLabel}</span>
                     </div>
                     <div className="absolute top-4 right-4 z-10 text-[11px] font-mono text-gray-500">
                         x: {mousePos.x.toFixed(1)} y: {mousePos.y.toFixed(1)}
                     </div>
                     <div className="absolute inset-0 flex items-center justify-center p-6 pt-12">
-                        <FactoryMap
-                            robots={mission.robots}
-                            fireIntensity={mission.fireIntensity}
-                            firePhase={mission.firePhase}
-                            personRescued={mission.personRescued}
-                            onMouseMove={setMousePos}
-                        />
+                        {scenario === 'kitchen' ? (
+                            <KitchenMap
+                                robots={mission.robots}
+                                fireIntensity={mission.fireIntensity}
+                                firePhase={mission.firePhase}
+                                personRescued={mission.personRescued}
+                                onMouseMove={setMousePos}
+                                config={config}
+                            />
+                        ) : (
+                            <FactoryMap
+                                robots={mission.robots}
+                                fireIntensity={mission.fireIntensity}
+                                firePhase={mission.firePhase}
+                                personRescued={mission.personRescued}
+                                onMouseMove={setMousePos}
+                                config={config}
+                            />
+                        )}
                     </div>
                     {/* Legend */}
                     <div className="absolute bottom-4 left-4 z-10 flex items-center gap-4">
@@ -384,7 +531,7 @@ export default function Simulation() {
                         </h2>
                         <div className="space-y-2 overflow-y-auto flex-1 pr-1">
                             {Object.entries(mission.robots).map(([rid, r]) => {
-                                const meta = ROBOT_META[rid];
+                                const meta = config.robots[rid] || { label: rid, icon: '🤖', color: '#888' };
                                 const ts = TASK_STYLES[r.task] || TASK_STYLES.standby;
                                 return (
                                     <div key={rid} className="p-3 bg-white/[0.02] rounded-xl border border-white/[0.04] hover:border-white/[0.1] transition-all">
@@ -421,10 +568,9 @@ export default function Simulation() {
                                     onChange={e => setManualRobot(e.target.value)}
                                     className="cc-select"
                                 >
-                                    <option value="tiago1">TIAGo #1</option>
-                                    <option value="tiago2">TIAGo #2</option>
-                                    <option value="tiago3">TIAGo #3</option>
-                                    <option value="mavic">Mavic Drone</option>
+                                    {Object.entries(config.robots).map(([rid, meta]) => (
+                                        <option key={rid} value={rid}>{meta.label}</option>
+                                    ))}
                                 </select>
                                 <select
                                     value={manualAction}
@@ -473,21 +619,26 @@ export default function Simulation() {
             <div className="px-4 md:px-6 pb-6">
                 <div className="cc-panel p-5">
                     <h2 className="cc-section-title mb-4">
-                        <Video size={14} className="text-rescue-orange" /> Simulation Recording
+                        <Video size={14} className="text-rescue-orange" /> Simulation Recordings — {config.shortLabel}
                     </h2>
-                    <div className="w-full aspect-video bg-[#0a0e17] rounded-xl border border-white/[0.06] overflow-hidden flex items-center justify-center">
-                        {/* Replace the src below with your actual video URL */}
-                        <video
-                            className="w-full h-full object-cover rounded-xl"
-                            controls
-                        >
-                            <source src="/videos/factory_rescue.mp4" type="video/mp4" />
-                            Your browser does not support the video tag.
-                        </video>
+                    <div className={`grid gap-4 ${config.videos.length > 1 ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1'}`}>
+                        {config.videos.map((vid, i) => (
+                            <div key={vid.src}>
+                                <div className="w-full aspect-video bg-[#0a0e17] rounded-xl border border-white/[0.06] overflow-hidden">
+                                    <video
+                                        className="w-full h-full object-cover rounded-xl"
+                                        controls
+                                    >
+                                        <source src={vid.src} type="video/mp4" />
+                                        Your browser does not support the video tag.
+                                    </video>
+                                </div>
+                                <p className="text-[11px] text-gray-600 mt-2 text-center font-mono">
+                                    {vid.label}
+                                </p>
+                            </div>
+                        ))}
                     </div>
-                    <p className="text-[11px] text-gray-600 mt-3 text-center font-mono">
-                        Webots simulation recording — factory fire rescue scenario
-                    </p>
                 </div>
             </div>
         </div>
@@ -539,10 +690,12 @@ function LegendDot({ color, label }) {
     );
 }
 
-function FactoryMap({ robots, fireIntensity, firePhase, personRescued, onMouseMove }) {
+function FactoryMap({ robots, fireIntensity, firePhase, personRescued, onMouseMove, config }) {
     const svgRef = useRef(null);
     const fireR = fireIntensity * 1.8;
     const showFire = firePhase !== 'IDLE' && firePhase !== 'EXTINGUISHED';
+    const FIRE_POS = config.firePos;
+    const INJURED_POS = config.injuredPos;
 
     const handleMouseMove = useCallback((e) => {
         if (!svgRef.current || !onMouseMove) return;
@@ -609,7 +762,7 @@ function FactoryMap({ robots, fireIntensity, firePhase, personRescued, onMouseMo
             </g>
 
             {Object.entries(robots).map(([rid, r]) => {
-                const meta = ROBOT_META[rid];
+                const meta = config.robots[rid] || { label: rid, icon: '🤖', color: '#888' };
                 const col = meta.color;
                 return (
                     <g key={rid}>
@@ -630,6 +783,141 @@ function FactoryMap({ robots, fireIntensity, firePhase, personRescued, onMouseMo
             <text x="-9.8" y="3.5" fontSize="0.25" fill="#293548" fontFamily="JetBrains Mono, monospace">(-10, 3.8)</text>
             <text x="8.2" y="3.5" fontSize="0.25" fill="#293548" fontFamily="JetBrains Mono, monospace">(10, 3.8)</text>
             <text x="-9.8" y="-12" fontSize="0.25" fill="#293548" fontFamily="JetBrains Mono, monospace">(-10, -12.5)</text>
+        </svg>
+    );
+}
+
+function KitchenMap({ robots, fireIntensity, firePhase, personRescued, onMouseMove, config }) {
+    const svgRef = useRef(null);
+    const fireR = fireIntensity * 1.8;
+    const showFire = firePhase !== 'IDLE' && firePhase !== 'EXTINGUISHED';
+    const FIRE_POS = config.firePos;
+    const INJURED_POS = config.injuredPos;
+
+    const handleMouseMove = useCallback((e) => {
+        if (!svgRef.current || !onMouseMove) return;
+        const svg = svgRef.current;
+        const pt = svg.createSVGPoint();
+        pt.x = e.clientX;
+        pt.y = e.clientY;
+        const svgPt = pt.matrixTransform(svg.getScreenCTM().inverse());
+        onMouseMove({ x: svgPt.x, y: svgPt.y });
+    }, [onMouseMove]);
+
+    return (
+        <svg
+            ref={svgRef}
+            viewBox="-10 -8 20 16"
+            className="w-full h-full max-w-none"
+            style={{ filter: 'drop-shadow(0 0 40px rgba(0,0,0,0.3))' }}
+            onMouseMove={handleMouseMove}
+        >
+            {/* Background */}
+            <rect x="-10" y="-8" width="20" height="16" fill="#0a0e17" rx="0.3" />
+            {/* Room outline */}
+            <rect x="-9" y="-7" width="18" height="14" fill="none" stroke="#293548" strokeWidth="0.12" rx="0.1" />
+            {/* Grid */}
+            <g stroke="#1a2236" strokeWidth="0.03">
+                <line x1="-9" y1="0" x2="9" y2="0" />
+                <line x1="-9" y1="-3.5" x2="9" y2="-3.5" />
+                <line x1="-9" y1="3.5" x2="9" y2="3.5" />
+                <line x1="-4.5" y1="-7" x2="-4.5" y2="7" />
+                <line x1="0" y1="-7" x2="0" y2="7" />
+                <line x1="4.5" y1="-7" x2="4.5" y2="7" />
+            </g>
+
+            {/* Stove */}
+            <rect x="1.5" y="-3.5" width="3.5" height="2.5" rx="0.15" fill="rgba(239,68,68,0.06)" stroke="rgba(239,68,68,0.2)" strokeWidth="0.05" />
+            <text x="3.25" y="-3.8" fontSize="0.35" fill="#8899b0" textAnchor="middle" fontFamily="Inter, sans-serif">Stove</text>
+            {/* Burners */}
+            <circle cx="2.3" cy="-2.8" r="0.3" fill="none" stroke="rgba(239,68,68,0.15)" strokeWidth="0.04" />
+            <circle cx="3.5" cy="-2.8" r="0.3" fill="none" stroke="rgba(239,68,68,0.15)" strokeWidth="0.04" />
+            <circle cx="2.3" cy="-1.8" r="0.3" fill="none" stroke="rgba(239,68,68,0.15)" strokeWidth="0.04" />
+            <circle cx="3.5" cy="-1.8" r="0.3" fill="none" stroke="rgba(239,68,68,0.15)" strokeWidth="0.04" />
+
+            {/* Counter */}
+            <rect x="5.5" y="-6.5" width="3" height="6" rx="0.1" fill="rgba(59,130,246,0.04)" stroke="rgba(59,130,246,0.1)" strokeWidth="0.04" />
+            <text x="7" y="-6.8" fontSize="0.3" fill="#556677" textAnchor="middle" fontFamily="Inter, sans-serif">Counter</text>
+
+            {/* Sink */}
+            <rect x="5.8" y="-5.5" width="2.2" height="1.2" rx="0.1" fill="rgba(96,165,250,0.08)" stroke="rgba(96,165,250,0.15)" strokeWidth="0.04" />
+            <text x="6.9" y="-4.6" fontSize="0.25" fill="#556677" textAnchor="middle" fontFamily="Inter, sans-serif">Sink</text>
+
+            {/* Fridge */}
+            <rect x="-8.5" y="-6.5" width="2" height="3" rx="0.15" fill="rgba(148,163,184,0.06)" stroke="rgba(148,163,184,0.15)" strokeWidth="0.05" />
+            <text x="-7.5" y="-6.8" fontSize="0.3" fill="#556677" textAnchor="middle" fontFamily="Inter, sans-serif">Fridge</text>
+
+            {/* Dining Table */}
+            <rect x="-6" y="0.5" width="4" height="2.5" rx="0.15" fill="rgba(168,85,247,0.04)" stroke="rgba(168,85,247,0.1)" strokeWidth="0.04" />
+            <text x="-4" y="0.2" fontSize="0.35" fill="#556677" textAnchor="middle" fontFamily="Inter, sans-serif">Dining Table</text>
+            {/* Chairs */}
+            <rect x="-6.3" y="1.0" width="0.2" height="0.6" rx="0.05" fill="rgba(168,85,247,0.08)" stroke="rgba(168,85,247,0.1)" strokeWidth="0.02" />
+            <rect x="-6.3" y="2.0" width="0.2" height="0.6" rx="0.05" fill="rgba(168,85,247,0.08)" stroke="rgba(168,85,247,0.1)" strokeWidth="0.02" />
+            <rect x="-1.9" y="1.0" width="0.2" height="0.6" rx="0.05" fill="rgba(168,85,247,0.08)" stroke="rgba(168,85,247,0.1)" strokeWidth="0.02" />
+            <rect x="-1.9" y="2.0" width="0.2" height="0.6" rx="0.05" fill="rgba(168,85,247,0.08)" stroke="rgba(168,85,247,0.1)" strokeWidth="0.02" />
+
+            {/* Kitchen island */}
+            <rect x="-1.5" y="-5" width="2.5" height="1.5" rx="0.1" fill="rgba(255,255,255,0.03)" stroke="#293548" strokeWidth="0.04" />
+            <text x="-0.25" y="-5.3" fontSize="0.28" fill="#556677" textAnchor="middle" fontFamily="Inter, sans-serif">Island</text>
+
+            {/* Door */}
+            <rect x="-9.1" y="2.5" width="0.2" height="1.5" fill="rgba(99,102,241,0.3)" rx="0.05" />
+            <text x="-8.3" y="3.5" fontSize="0.3" fill="#556677" fontFamily="Inter, sans-serif">Door</text>
+
+            {/* Window */}
+            <rect x="8.9" y="-4" width="0.2" height="2" fill="rgba(147,197,253,0.3)" rx="0.05" />
+            <text x="8.0" y="-2.2" fontSize="0.25" fill="#556677" fontFamily="Inter, sans-serif">Window</text>
+
+            {/* Fire */}
+            {showFire && (
+                <>
+                    <circle cx={FIRE_POS.x} cy={FIRE_POS.y} r={fireR} fill="rgba(249,115,22,0.3)" className="animate-pulse">
+                        <animate attributeName="r" values={`${fireR * 0.9};${fireR * 1.1};${fireR * 0.9}`} dur="1.5s" repeatCount="indefinite" />
+                    </circle>
+                    <circle cx={FIRE_POS.x} cy={FIRE_POS.y} r={fireR * 0.4} fill="rgba(239,68,68,0.6)">
+                        <animate attributeName="r" values={`${fireR * 0.35};${fireR * 0.45};${fireR * 0.35}`} dur="0.8s" repeatCount="indefinite" />
+                    </circle>
+                    <text x={FIRE_POS.x} y={FIRE_POS.y + 0.15} fontSize="0.6" textAnchor="middle">🔥</text>
+                </>
+            )}
+            {firePhase === 'EXTINGUISHED' && (
+                <text x={FIRE_POS.x} y={FIRE_POS.y + 0.2} fontSize="0.5" textAnchor="middle">✅</text>
+            )}
+
+            {/* Injured person */}
+            <g opacity={personRescued ? 0.3 : 1}>
+                <circle cx={INJURED_POS.x} cy={INJURED_POS.y} r="0.35" fill="none" stroke="rgba(168,85,247,0.5)" strokeWidth="0.06" strokeDasharray="0.1,0.08">
+                    {!personRescued && <animate attributeName="r" values="0.35;0.5;0.35" dur="2s" repeatCount="indefinite" />}
+                </circle>
+                <text x={INJURED_POS.x} y={INJURED_POS.y + 0.15} fontSize="0.55" textAnchor="middle">🧑</text>
+                <text x={INJURED_POS.x} y={INJURED_POS.y - 0.5} fontSize="0.3" fill={personRescued ? '#22c55e' : '#a855f7'} textAnchor="middle" fontFamily="Inter, sans-serif" fontWeight="600">
+                    {personRescued ? 'Rescued ✓' : 'Injured'}
+                </text>
+            </g>
+
+            {/* Robots */}
+            {Object.entries(robots).map(([rid, r]) => {
+                const meta = config.robots[rid] || { label: rid, icon: '🤖', color: '#888' };
+                const col = meta.color;
+                return (
+                    <g key={rid}>
+                        <circle cx={r.x} cy={r.y} r="0.55" fill={`${col}22`} stroke={col} strokeWidth="0.06" />
+                        <circle cx={r.x} cy={r.y} r="0.2" fill={col} />
+                        <text x={r.x} y={r.y + 0.95} fontSize="0.32" fill={col} textAnchor="middle" fontWeight="600" fontFamily="Inter, sans-serif">
+                            {meta.label}
+                        </text>
+                        {r.task && r.task !== 'standby' && (
+                            <text x={r.x} y={r.y - 0.7} fontSize="0.25" fill={(TASK_STYLES[r.task] || TASK_STYLES.standby).text} textAnchor="middle" fontWeight="700" fontFamily="Inter, sans-serif">
+                                {r.task.toUpperCase()}
+                            </text>
+                        )}
+                    </g>
+                );
+            })}
+
+            <text x="-8.8" y="6.8" fontSize="0.22" fill="#293548" fontFamily="JetBrains Mono, monospace">(-9, 7)</text>
+            <text x="7" y="6.8" fontSize="0.22" fill="#293548" fontFamily="JetBrains Mono, monospace">(9, 7)</text>
+            <text x="-8.8" y="-6.7" fontSize="0.22" fill="#293548" fontFamily="JetBrains Mono, monospace">(-9, -7)</text>
         </svg>
     );
 }
