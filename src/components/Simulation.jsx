@@ -89,8 +89,8 @@ const SCENARIOS = {
             { at: 30, type: 'log', msg: '[SYSTEM] All units returning to standby' },
         ],
         videos: [
-            { src: '/videos/kitchen.mp4', label: 'Webots kitchen environment' },
             { src: '/videos/RescueOrch_kitchen.mp4', label: 'RescuOrch kitchen rescue mission' },
+            { src: '/videos/kitchen.mp4', label: 'Webots kitchen environment' },
         ],
     },
     factory: {
